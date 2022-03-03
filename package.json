@@ -35,7 +35,8 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "create-enduser": "node -r dotenv/config create_enduser.js"
+    "create-enduser": "node -r dotenv/config create_enduser.js",
+    "create-chat-room": "node -r dotenv/config create_chat_room.js"
   },
   "eslintConfig": {
     "extends": [

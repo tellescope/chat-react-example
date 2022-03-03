@@ -30,6 +30,14 @@ you can run the following script to create a sample enduser for testing.
 npm run create-enduser
 ```
 
+#### `Chat Room`
+You will need a test chat room to send messages. 
+You can run the following script to create a room with your sample enduser
+```
+npm run create-chat-room
+```
+You can also create a chat room in the UI 
+
 ## Running
 
 ### `npm start`

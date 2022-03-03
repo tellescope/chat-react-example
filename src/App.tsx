@@ -200,18 +200,26 @@ const CustomSidebar = ({ type, selectedRoom, setSelectedRoom } : WithSessionType
         <Flex flex={1} column onClick={() => !selected && onClick?.(room)} 
           style={{ 
             minWidth: 200,
+            minHeight: 25,
             padding: 5, 
             cursor: 'pointer',
-            backgroundColor: selected ? '#999999' : undefined,
+            backgroundColor: selected ? '#bbbbbb' : undefined,
             borderBottom: '1px solid black',
           }}
         >
+
+        {!room.recentMessage &&
+          <Typography>New Chat Room</Typography>
+        }
+        
         <Typography>
-          {resolve_chat_room_name(room, displayInfo, type, session.userInfo.id)}
+          {
+            resolve_chat_room_name(room, displayInfo, type, session.userInfo.id)
+          }
         </Typography>
   
         <Typography>
-          {room.recentMessage ?? room.title}
+          {room.recentMessage}
         </Typography>
         </Flex>
       )
