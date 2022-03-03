@@ -24,13 +24,20 @@ import {
   Button,
   LoadingButton,
   LoadingLinear,
+  useChatRooms,
+  useChats,
+  useResolvedSession,
+  Paper,
 } from "@tellescope/react-components"
 
 import {
-  EnduserChatSplit,
-  UserChatSplit,
+  Conversations,
+  Messages,
+  SendMessage,
   user_display_name,
 } from "@tellescope/chat"
+import { SessionType } from '@tellescope/types-utilities';
+import { ChatRoom, UserDisplayInfo } from '@tellescope/types-client';
 
 // Replace this with your Tellescope organization ID
 const businessId = process.env.REACT_APP_TELLESCOPE_BUSINESS_ID 
@@ -47,10 +54,12 @@ const ViewSelector = () => {
   const navigate = useNavigate()
 
   return (
-    <div>
-      Select Test Page <br/>
+    <div style={{ margin: 20 }}>
+      Create a Chat Room to get started, then login as a user or enduser to chat in the room<br/>
       {routes.map(r => 
-        <button key={r} onClick={() => navigate(r)}>{r}</button>
+        <div key={r} style={{ margin: '5px 0px' }}>
+          <button onClick={() => navigate(r)}>{r}</button>
+        </div>
       )}
     </div>
   )
@@ -86,7 +95,7 @@ export const App = () => {
 const CreateChatRoom = () => (
   <WithSession sessionOptions={{ host }}>
   <UserProvider>
-    <CreateChatRomWithProvider/> 
+    <CreateChatRoomWithProvider/> 
   </UserProvider>
   </WithSession>
 )
@@ -148,7 +157,7 @@ const CreateChatRoomButton = () => {
     </Flex>
   )
 }
-const CreateChatRomWithProvider = () => {
+const CreateChatRoomWithProvider = () => {
   const session = useSession()
   if (!session.authToken) return (
     <Flex column>
@@ -162,10 +171,86 @@ const CreateChatRomWithProvider = () => {
   )
 }
 
+/* Assuming 1-1 user-enduser chat room */
+const resolve_chat_room_name = (room: ChatRoom, displayInfo: { [index: string]: UserDisplayInfo }, userType: SessionType, currentUserId: string) => {
+  if (room.recentSender !== currentUserId) {
+    return user_display_name(displayInfo[room.recentSender ?? ''])
+  }
+  if (userType === 'user') {
+    return user_display_name(displayInfo[room?.enduserIds?.[0] ?? room.creator ?? ''])
+  }
+  if (userType === 'enduser') {
+    console.log(room.recentSender, room.creator, displayInfo[room.creator])
+    return user_display_name(displayInfo[room?.userIds?.[0] ?? room.creator ?? ''])
+  }
+  return ''
+}
+
+interface WithSessionType { type: SessionType }
+interface RoomSelector { selectedRoom: string, setSelectedRoom: (s: string) => void }
+const CustomSidebar = ({ type, selectedRoom, setSelectedRoom } : WithSessionType & RoomSelector) => {
+  const [loadingRooms] = useChatRooms(type)
+  const session = useResolvedSession()
+
+  return (
+    <Paper elevation={3}>
+    <Conversations rooms={loadingRooms} selectedRoom={selectedRoom} onRoomSelect={setSelectedRoom} 
+      style={{ backgroundColor: 'white' }}
+      PreviewComponent={({ onClick, selected, room, displayInfo }) => (
+        <Flex flex={1} column onClick={() => !selected && onClick?.(room)} 
+          style={{ 
+            minWidth: 200,
+            padding: 5, 
+            cursor: 'pointer',
+            backgroundColor: selected ? '#999999' : undefined,
+            borderBottom: '1px solid black',
+          }}
+        >
+        <Typography>
+          {resolve_chat_room_name(room, displayInfo, type, session.userInfo.id)}
+        </Typography>
+  
+        <Typography>
+          {room.recentMessage ?? room.title}
+        </Typography>
+        </Flex>
+      )
+    }
+    />
+    </Paper>
+  )
+}
+
+const CustomSplitChat = ({ type } : WithSessionType) => {
+  const session = useResolvedSession()
+  const [selectedRoom, setSelectedRoom] = React.useState('')
+  const [chats] = useChats(selectedRoom, type)
+
+  return (
+    <Flex flex={1} style={{ margin: 20 }}>
+      <Flex>
+        <CustomSidebar type={type} selectedRoom={selectedRoom} setSelectedRoom={setSelectedRoom}/>
+      </Flex>
+
+      <Paper flex elevation={3}>
+      <Flex column flex={1}>
+        <Flex flex={1}>
+        <Messages messages={chats} chatUserId={session.userInfo.id} />
+        </Flex>
+
+        <Flex>
+          <SendMessage roomId={selectedRoom} type={type} />
+        </Flex>
+      </Flex>
+      </Paper>
+    </Flex>
+  )
+}
+
 const ChatsForUser = () => (
   <WithSession sessionOptions={{ host }}>
   <UserProvider>
-    <ChatsForUserWithProvider/> 
+    <ChatsForUserWithProvider />
   </UserProvider>
   </WithSession>
 )
@@ -174,7 +259,7 @@ const ChatsForUserWithProvider = () => {
   const session = useSession()
   if (!session.authToken) return <UserLogin/>
 
-  return <UserChatSplit/>
+  return <CustomSplitChat type="user"/> 
 }
 
 const ChatsForEnduser = () => (
@@ -193,7 +278,7 @@ const ChatsForEnduserWithProvider = () => {
     />
   )
 
-  return <EnduserChatSplit/>
+  return <CustomSplitChat type="enduser" />
 }
 
 
