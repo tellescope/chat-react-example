@@ -19,12 +19,11 @@ import {
   EnduserLogin,
   UserLogin,
   Typography,
-  useEndusersForUser as useEndusers,
-  useChatRoomsForUser,
+  useEndusers,
+  useChatRooms,
   Button,
   LoadingButton,
   LoadingLinear,
-  useChatRooms,
   useChats,
   useResolvedSession,
   Paper,
@@ -101,7 +100,7 @@ const CreateChatRoom = () => (
 )
 const CreateChatRoomButton = () => {
   const [loadingEndusers] = useEndusers()
-  const [loadingChatRooms, { createElement: createChatRoom }] = useChatRoomsForUser()
+  const [loadingChatRooms, { createElement: createChatRoom }] = useChatRooms()
   const [showEndusers, setShowEndusers] = React.useState(false)
   const [selectedEnduserId, setSelectedEnduserId] = React.useState('')
 
@@ -160,7 +159,7 @@ const CreateChatRoomButton = () => {
 const CreateChatRoomWithProvider = () => {
   const session = useSession()
   if (!session.authToken) return (
-    <Flex column>
+    <Flex column flex={1} style={{ padding: 20 }}>
       <Typography>User Login</Typography>
       <UserLogin/>
     </Flex>
@@ -189,7 +188,7 @@ const resolve_chat_room_name = (room: ChatRoom, displayInfo: { [index: string]: 
 interface WithSessionType { type: SessionType }
 interface RoomSelector { selectedRoom: string, setSelectedRoom: (s: string) => void }
 const CustomSidebar = ({ type, selectedRoom, setSelectedRoom } : WithSessionType & RoomSelector) => {
-  const [loadingRooms] = useChatRooms(type)
+  const [loadingRooms] = useChatRooms()
   const session = useResolvedSession()
 
   return (
@@ -232,7 +231,7 @@ const CustomSidebar = ({ type, selectedRoom, setSelectedRoom } : WithSessionType
 const CustomSplitChat = ({ type } : WithSessionType) => {
   const session = useResolvedSession()
   const [selectedRoom, setSelectedRoom] = React.useState('')
-  const [chats] = useChats(selectedRoom, type)
+  const [chats] = useChats(selectedRoom)
 
   return (
     <Flex flex={1} style={{ margin: 20 }}>
@@ -242,12 +241,10 @@ const CustomSplitChat = ({ type } : WithSessionType) => {
 
       <Paper flex elevation={3}>
       <Flex column flex={1}>
-        <Flex flex={1}>
         <Messages messages={chats} chatUserId={session.userInfo.id} />
-        </Flex>
 
-        <Flex>
-          <SendMessage roomId={selectedRoom} type={type} />
+        <Flex style={{ marginTop: 'auto' }}>
+          <SendMessage roomId={selectedRoom} />
         </Flex>
       </Flex>
       </Paper>
@@ -265,7 +262,11 @@ const ChatsForUser = () => (
 
 const ChatsForUserWithProvider = () => {
   const session = useSession()
-  if (!session.authToken) return <UserLogin/>
+  if (!session.authToken) return (
+    <Flex flex={1} style={{ padding: 20 }}>
+      <UserLogin/>
+    </Flex>
+  )
 
   return <CustomSplitChat type="user"/> 
 }
@@ -280,10 +281,12 @@ const ChatsForEnduser = () => (
 const ChatsForEnduserWithProvider = () => {
   const session = useEnduserSession()
   if (!session.authToken) return (
-    <EnduserLogin 
-      fillEmail={process.env.REACT_APP_EXAMPLE_ENDUSER_EMAIL}
-      fillPassword={process.env.REACT_APP_EXAMPLE_ENDUSER_PASSWORD}
-    />
+    <Flex flex={1} style={{ padding: 20 }}>
+      <EnduserLogin 
+        fillEmail={process.env.REACT_APP_EXAMPLE_ENDUSER_EMAIL}
+        fillPassword={process.env.REACT_APP_EXAMPLE_ENDUSER_PASSWORD}
+      />
+    </Flex>
   )
 
   return <CustomSplitChat type="enduser" />
